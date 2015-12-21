@@ -1,6 +1,7 @@
 # ZED Raport
 Andrzej Nowicki  
-`r format(Sys.time(), '%d %B, %Y')`  
+Data przygotowania raportu: date: 21 grudzień 2015
+
 
 
 
@@ -57,18 +58,18 @@ kable(top_classes)
 
 
 
-res_name    count
----------  ------
-SO4            57
-CA             40
-ZN             38
-GOL            36
-MG             23
-CL             20
-EDO            19
-NAG            19
-HEM            18
-PO4            14
+|res_name | count|
+|:--------|-----:|
+|SO4      |    57|
+|CA       |    40|
+|ZN       |    38|
+|GOL      |    36|
+|MG       |    23|
+|CL       |    20|
+|EDO      |    19|
+|NAG      |    19|
+|HEM      |    18|
+|PO4      |    14|
 
 TODO: Wykresy rozkładów liczby atomów (local_res_atom_non_h_count) i elektronów (local_res_atom_non_h_electron_sum);
 

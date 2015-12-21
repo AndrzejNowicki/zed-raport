@@ -1,12 +1,12 @@
 ---
 title: "ZED Raport"
 author: "Andrzej Nowicki"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   html_document: 
     keep_md: yes
     toc: yes
 ---
+Data przygotowania raportu: `r format(Sys.time(), '%d %B %Y')`
 ```{r setup_libs, echo=FALSE, results='hide', message=FALSE}
 library(dplyr)
 library(ggplot2)
@@ -17,6 +17,10 @@ max_rows<- 2000
 ```
 ```{r setup_seed, echo=FALSE}
 set.seed(100)
+```
+```{r setup_others, echo=FALSE}
+options(knitr.table.format = 'markdown')
+
 ```
 ## Podsumowanie
 Blablabla
