@@ -1,68 +1,77 @@
----
-title: "ZED Raport"
-author: "Andrzej Nowicki"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: 
-  html_document: 
-    keep_md: yes
-    toc: yes
----
-```{r setup_libs, echo=FALSE, results='hide', message=FALSE}
-library(dplyr)
-library(ggplot2)
-library(knitr)
-```
-```{r setup_read, echo=FALSE}
-max_rows<- 2000
-```
-```{r setup_seed, echo=FALSE}
-set.seed(100)
-```
+# ZED Raport
+Andrzej Nowicki  
+`r format(Sys.time(), '%d %B, %Y')`  
+
+
+
 ## Podsumowanie
 Blablabla
 
 ## Wstęp
 
 W trakcie przygotowywania raportu zostały wykorzystane następujące biblioteki:
-```{r setup_libs, eval=FALSE}
+
+```r
+library(dplyr)
+library(ggplot2)
+library(knitr)
 ```
 Aby zapewnić powtarzalność wyników przy kolejnych uruchomieniach raportu ustawiono stałe ziarno generatora liczb pseudolosowych:
-```{r setup_seed, eval=FALSE}
+
+```r
+set.seed(100)
 ```
 Dane z pliku zostały wczytane za pomocą polecenia:
-```{r read, cache=TRUE}
+
+```r
 r<-read.csv2("all_summary.txt",nrows=max_rows)
 # max_rows pozwala na ograniczenie zbioru danych w celu przyspieszenia obliczeń w trakcie przygotowywania raportu
 ```
 
 Usunięcie z danych wierszy o określonej wartości zmiennej res_name
 
-```{r}
+
+```r
 delete_list <- c("DA","DC","DT", "DU", "DG", "DI","UNK", "UNX", "UNL", "PR", "PD", "Y1", "EU", "N", "15P", "UQ", "PX4","NAN")
 r <- r %>% filter(!res_name %in% delete_list)
 ```
 Pozostawienie tylko unikatowych pary wartości (pdb_code, res_name)
-```{r}
+
+```r
 r_distinct <-r %>% distinct(pdb_code, res_name) 
 ```
 
-Przed usunięciem było `r nrow(r)` wierszy. Po usunięciu duplikatów jest `r nrow(r_distinct)` wierszy.
+Przed usunięciem było 1995 wierszy. Po usunięciu duplikatów jest 662 wierszy.
 
 TODO: Krótkie podsumowanie wartości w każdej kolumnie;
 
 TODO: Sekcje sprawdzającą korelacje między zmiennymi; sekcja ta powinna zawierać jakąś formę graficznej prezentacji korelacji;
 
 TODO: Określenie ile przykładów ma każda z klas (res_name);
-```{r}
+
+```r
 classes_occurences <- r_distinct %>% group_by(res_name) %>% summarise(count=n())
 top_classes <- classes_occurences %>% arrange(desc(count)) %>% top_n(10,count)
 kable(top_classes)
 ```
 
-TODO: Wykresy rozkładów liczby atomów (local_res_atom_non_h_count) i elektronów (local_res_atom_non_h_electron_sum);
-```{r}
 
-```
+
+res_name    count
+---------  ------
+SO4            57
+CA             40
+ZN             38
+GOL            36
+MG             23
+CL             20
+EDO            19
+NAG            19
+HEM            18
+PO4            14
+
+TODO: Wykresy rozkładów liczby atomów (local_res_atom_non_h_count) i elektronów (local_res_atom_non_h_electron_sum);
+
 
 TODO: Próbę odtworzenia następującego wykresu (oś X - liczba elektronów, oś y - liczba atomów): Wykres liczby atomów i elektronów
 
