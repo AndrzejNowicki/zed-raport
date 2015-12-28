@@ -1,6 +1,7 @@
 # ZED Raport
 Andrzej Nowicki  
-Data przygotowania raportu: date: 21 grudzień 2015
+Data przygotowania raportu: 28 grudzień 2015
+
 
 
 
@@ -13,6 +14,7 @@ Blablabla
 W trakcie przygotowywania raportu zostały wykorzystane następujące biblioteki:
 
 ```r
+#install.packages("ggExtra")
 library(dplyr)
 library(ggplot2)
 library(knitr)
@@ -38,8 +40,9 @@ r <- r %>% filter(!res_name %in% delete_list)
 ```
 Pozostawienie tylko unikatowych pary wartości (pdb_code, res_name)
 
+
 ```r
-r_distinct <-r %>% distinct(pdb_code, res_name) 
+r <-r %>% distinct(pdb_code, res_name) 
 ```
 
 Przed usunięciem było 1995 wierszy. Po usunięciu duplikatów jest 662 wierszy.
@@ -48,10 +51,12 @@ TODO: Krótkie podsumowanie wartości w każdej kolumnie;
 
 TODO: Sekcje sprawdzającą korelacje między zmiennymi; sekcja ta powinna zawierać jakąś formę graficznej prezentacji korelacji;
 
+## Klasy
+
 TODO: Określenie ile przykładów ma każda z klas (res_name);
 
 ```r
-classes_occurences <- r_distinct %>% group_by(res_name) %>% summarise(count=n())
+classes_occurences <- r %>% group_by(res_name) %>% summarise(count=n())
 top_classes <- classes_occurences %>% arrange(desc(count)) %>% top_n(10,count)
 kable(top_classes)
 ```
@@ -71,10 +76,36 @@ kable(top_classes)
 |HEM      |    18|
 |PO4      |    14|
 
+```r
+ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy")
+```
+
+![](raport_files/figure-html/unnamed-chunk-4-1.png) 
+
 TODO: Wykresy rozkładów liczby atomów (local_res_atom_non_h_count) i elektronów (local_res_atom_non_h_electron_sum);
 
+```r
+ggplot(r, aes(r$local_res_atom_non_h_count)) + geom_histogram() + ggtitle("Histogram liczby atomów")
+```
+
+![](raport_files/figure-html/unnamed-chunk-5-1.png) 
+
+```r
+ggplot(r, aes(r$local_res_atom_non_h_electron_sum)) + geom_histogram() + ggtitle("Histogram liczby elektronów")
+```
+
+![](raport_files/figure-html/unnamed-chunk-5-2.png) 
 
 TODO: Próbę odtworzenia następującego wykresu (oś X - liczba elektronów, oś y - liczba atomów): Wykres liczby atomów i elektronów
+
+```r
+plot <- ggplot(r,aes(x=local_res_atom_non_h_electron_sum,y=local_res_atom_non_h_count)) +
+  stat_density2d(geom="tile",aes(fill=..density..),  contour=FALSE) +
+  scale_fill_gradient(low="blue", high="green") + guides(fill=FALSE) + theme_minimal()
+ggExtra::ggMarginal(plot, type="histogram", xparams=list(binwidth=5),yparams=list(binwidth=1))
+```
+
+![](raport_files/figure-html/unnamed-chunk-6-1.png) 
 
 TODO: Tabelę pokazującą 10 klas z największą niezgodnością liczby atomów (local_res_atom_non_h_count vs dict_atom_non_h_count) i tabelę pokazującą 10 klas z największą niezgodnością liczby elektronów (local_res_atom_non_h_electron_sum vs dict_atom_non_h_electron_sum;)
 

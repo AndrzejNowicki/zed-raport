@@ -5,22 +5,26 @@ output:
   html_document: 
     keep_md: yes
     toc: yes
+    base64_images: yes
 ---
 Data przygotowania raportu: `r format(Sys.time(), '%d %B %Y')`
+
 ```{r setup_libs, echo=FALSE, results='hide', message=FALSE}
+#install.packages("ggExtra")
 library(dplyr)
 library(ggplot2)
 library(knitr)
+```
+```{r setup_others, echo=FALSE}
+options(knitr.table.format = 'markdown')
+opts_chunk$set(message=FALSE)
+opts_chunk$set(cache=TRUE)
 ```
 ```{r setup_read, echo=FALSE}
 max_rows<- 2000
 ```
 ```{r setup_seed, echo=FALSE}
 set.seed(100)
-```
-```{r setup_others, echo=FALSE}
-options(knitr.table.format = 'markdown')
-
 ```
 ## Podsumowanie
 Blablabla
@@ -46,29 +50,43 @@ delete_list <- c("DA","DC","DT", "DU", "DG", "DI","UNK", "UNX", "UNL", "PR", "PD
 r <- r %>% filter(!res_name %in% delete_list)
 ```
 Pozostawienie tylko unikatowych pary wartości (pdb_code, res_name)
+```{r,echo=FALSE}
+r_num <- nrow(r)
+```
 ```{r}
-r_distinct <-r %>% distinct(pdb_code, res_name) 
+r <-r %>% distinct(pdb_code, res_name) 
 ```
 
-Przed usunięciem było `r nrow(r)` wierszy. Po usunięciu duplikatów jest `r nrow(r_distinct)` wierszy.
+Przed usunięciem było `r r_num` wierszy. Po usunięciu duplikatów jest `r nrow(r)` wierszy.
 
 TODO: Krótkie podsumowanie wartości w każdej kolumnie;
 
 TODO: Sekcje sprawdzającą korelacje między zmiennymi; sekcja ta powinna zawierać jakąś formę graficznej prezentacji korelacji;
 
+## Klasy
+
 TODO: Określenie ile przykładów ma każda z klas (res_name);
 ```{r}
-classes_occurences <- r_distinct %>% group_by(res_name) %>% summarise(count=n())
+classes_occurences <- r %>% group_by(res_name) %>% summarise(count=n())
 top_classes <- classes_occurences %>% arrange(desc(count)) %>% top_n(10,count)
 kable(top_classes)
+ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy")
 ```
 
 TODO: Wykresy rozkładów liczby atomów (local_res_atom_non_h_count) i elektronów (local_res_atom_non_h_electron_sum);
-```{r}
-
+```{r,message=FALSE}
+ggplot(r, aes(r$local_res_atom_non_h_count)) + geom_histogram() + ggtitle("Histogram liczby atomów")
+ggplot(r, aes(r$local_res_atom_non_h_electron_sum)) + geom_histogram() + ggtitle("Histogram liczby elektronów")
 ```
 
 TODO: Próbę odtworzenia następującego wykresu (oś X - liczba elektronów, oś y - liczba atomów): Wykres liczby atomów i elektronów
+```{r}
+
+plot <- ggplot(r,aes(x=local_res_atom_non_h_electron_sum,y=local_res_atom_non_h_count)) +
+  stat_density2d(geom="tile",aes(fill=..density..),  contour=FALSE) +
+  scale_fill_gradient(low="blue", high="green") + guides(fill=FALSE) + theme_minimal()
+ggExtra::ggMarginal(plot, type="histogram", xparams=list(binwidth=5),yparams=list(binwidth=1))
+```
 
 TODO: Tabelę pokazującą 10 klas z największą niezgodnością liczby atomów (local_res_atom_non_h_count vs dict_atom_non_h_count) i tabelę pokazującą 10 klas z największą niezgodnością liczby elektronów (local_res_atom_non_h_electron_sum vs dict_atom_non_h_electron_sum;)
 
