@@ -10,26 +10,31 @@ output:
 Data przygotowania raportu: `r format(Sys.time(), '%d %B %Y')`
 
 ```{r setup_libs, echo=FALSE, results='hide', message=FALSE}
-#install.packages("ggExtra")
+library(knitr)
 library(dplyr)
 library(ggplot2)
-library(knitr)
+library(reshape2)
+library(ggExtra)
 ```
 ```{r setup_others, echo=FALSE}
 options(knitr.table.format = 'markdown')
 opts_chunk$set(message=FALSE)
+opts_chunk$set(warning=FALSE)
 opts_chunk$set(cache=TRUE)
-```
-```{r setup_read, echo=FALSE}
-max_rows<- 2000
 ```
 ```{r setup_seed, echo=FALSE}
 set.seed(100)
 ```
+
+
 ## Podsumowanie
+
+
 Blablabla
 
-## Wstęp
+
+## Przygotowanie środowiska
+
 
 W trakcie przygotowywania raportu zostały wykorzystane następujące biblioteki:
 ```{r setup_libs, eval=FALSE}
@@ -37,19 +42,25 @@ W trakcie przygotowywania raportu zostały wykorzystane następujące biblioteki
 Aby zapewnić powtarzalność wyników przy kolejnych uruchomieniach raportu ustawiono stałe ziarno generatora liczb pseudolosowych:
 ```{r setup_seed, eval=FALSE}
 ```
+
+
+## Przygotowanie danych
+
+
 Dane z pliku zostały wczytane za pomocą polecenia:
 ```{r read, cache=TRUE}
-r<-read.csv2("all_summary.txt",nrows=max_rows)
-# max_rows pozwala na ograniczenie zbioru danych w celu przyspieszenia obliczeń w trakcie przygotowywania raportu
+r <- read.table("all_summary.txt", header=TRUE, sep=";", dec=".",na.strings=c("nan"),nrow=-1)
 ```
+Wczytanych zostało  `r nrow(r)` wierszy.
 
-Usunięcie z danych wierszy o określonej wartości zmiennej res_name
-
+Z danych usunięto wiersze o określonej wartości zmiennej res_name:
 ```{r}
 delete_list <- c("DA","DC","DT", "DU", "DG", "DI","UNK", "UNX", "UNL", "PR", "PD", "Y1", "EU", "N", "15P", "UQ", "PX4","NAN")
 r <- r %>% filter(!res_name %in% delete_list)
 ```
-Pozostawienie tylko unikatowych pary wartości (pdb_code, res_name)
+Po usunięciu wyżej wymienionych wierszy zostało `r nrow(r)` wierszy.
+
+Pozostawiono tylko unikatowe pary wartości (pdb_code, res_name)
 ```{r,echo=FALSE}
 r_num <- nrow(r)
 ```
@@ -57,40 +68,82 @@ r_num <- nrow(r)
 r <-r %>% distinct(pdb_code, res_name) 
 ```
 
-Przed usunięciem było `r r_num` wierszy. Po usunięciu duplikatów jest `r nrow(r)` wierszy.
+Po usunięciu duplikatów zostało `r nrow(r)` wierszy.
 
-TODO: Krótkie podsumowanie wartości w każdej kolumnie;
+Krótkie podsumowanie wartości w każdej kolumnie
+```{r}
+kable(summary(r))
+```
 
 TODO: Sekcje sprawdzającą korelacje między zmiennymi; sekcja ta powinna zawierać jakąś formę graficznej prezentacji korelacji;
 
+
 ## Klasy
 
-TODO: Określenie ile przykładów ma każda z klas (res_name);
+
+Określenie ile przykładów ma każda z klas (res_name);
 ```{r}
-classes_occurences <- r %>% group_by(res_name) %>% summarise(count=n())
-top_classes <- classes_occurences %>% arrange(desc(count)) %>% top_n(10,count)
+classes_occurences <- r %>% group_by(res_name) %>% summarise(count=n()) %>% arrange(desc(count))
+top_classes <- classes_occurences  %>% top_n(10,count)
 kable(top_classes)
-ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy")
+ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy") +theme_bw()
 ```
 
-TODO: Wykresy rozkładów liczby atomów (local_res_atom_non_h_count) i elektronów (local_res_atom_non_h_electron_sum);
+
+## Wykresy rozkładów liczby atomów i elektronów
+
 ```{r,message=FALSE}
-ggplot(r, aes(r$local_res_atom_non_h_count)) + geom_histogram() + ggtitle("Histogram liczby atomów")
-ggplot(r, aes(r$local_res_atom_non_h_electron_sum)) + geom_histogram() + ggtitle("Histogram liczby elektronów")
+ggplot(r, aes(local_res_atom_non_h_count)) + geom_histogram() + ggtitle("Histogram liczby atomów")+theme_bw()
+ggplot(r, aes(local_res_atom_non_h_electron_sum)) + geom_histogram() + ggtitle("Histogram liczby elektronów")+theme_bw()
 ```
 
-TODO: Próbę odtworzenia następującego wykresu (oś X - liczba elektronów, oś y - liczba atomów): Wykres liczby atomów i elektronów
+
+## Próba odtworzenia wykresu 
+
+
 ```{r}
 
 plot <- ggplot(r,aes(x=local_res_atom_non_h_electron_sum,y=local_res_atom_non_h_count)) +
   stat_density2d(geom="tile",aes(fill=..density..),  contour=FALSE) +
-  scale_fill_gradient(low="blue", high="green") + guides(fill=FALSE) + theme_minimal()
-ggExtra::ggMarginal(plot, type="histogram", xparams=list(binwidth=5),yparams=list(binwidth=1))
+  guides(fill=FALSE) + theme_minimal() + scale_fill_distiller(palette = "Spectral") + ggtitle("Wykres liczby atomów i elektronów")
+ggExtra::ggMarginal(plot, type="histogram", xparams=list(binwidth=5,fill="red"),yparams=list(binwidth=1,fill="red"))
+
+```
+```{r}
+variances <- r %>% mutate(atom_variance = abs(local_res_atom_non_h_count - dict_atom_non_h_count),
+             electron_variance = abs(local_res_atom_non_h_electron_sum - dict_atom_non_h_electron_sum)) %>% 
+  group_by(res_name) %>%
+  summarise (sum_atom_variance=sum(atom_variance), sum_electron_variance=sum(electron_variance))
 ```
 
-TODO: Tabelę pokazującą 10 klas z największą niezgodnością liczby atomów (local_res_atom_non_h_count vs dict_atom_non_h_count) i tabelę pokazującą 10 klas z największą niezgodnością liczby elektronów (local_res_atom_non_h_electron_sum vs dict_atom_non_h_electron_sum;)
 
-TODO: Sekcję pokazującą rozkład wartości wszystkich kolumn zaczynających się od part_01 z zaznaczeniem (graficznym i liczbowym) średniej wartości;
+## 10 klas z największą niezgodnością liczby atomów
+
+
+```{r}
+kable(variances %>% top_n(10, sum_atom_variance) %>% select(res_name, sum_atom_variance) %>% arrange(desc(sum_atom_variance)))
+```
+
+
+## 10 klas z największą niezgodnością liczby elektronów
+
+
+```{r}
+kable(variances %>% top_n(10, sum_electron_variance) %>% select(res_name, sum_electron_variance) %>% arrange(desc(sum_electron_variance)))
+```
+
+
+## Rozkład wartości wszystkich kolumn zaczynających się od part_01
+
+
+```{r fig.width=18, fig.height=20, dpi=144}
+library(ggplot2) # ponowne zaladowanie bilioteki by uwzglednila fig.width i fig.height
+part01 <- r %>% select (part_01_blob_electron_sum:part_01_shape_sqrt_E3)
+melted <- melt(part01)
+means <- aggregate(value ~  variable, melted, mean)
+ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(data = means, aes(label = round(value,3), x=1,y = value),colour="red",nudge_x=0.1) + stat_summary(fun.y=mean, colour="red", geom="point")+ facet_wrap(~variable, scales="free", ncol=5)+theme_bw()
+```
+Wartości średnie zostały zaznaczone na czerwono.
 
 TODO: Sekcję sprawdzającą czy na podstawie wartości innych kolumn można przewidzieć liczbę elektronów i atomów oraz z jaką dokładnością można dokonać takiej predykcji; trafność regresji powinna zostać oszacowana na podstawie miar R^2 i RMSE;
 
