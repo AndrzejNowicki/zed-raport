@@ -201,7 +201,6 @@ kable(variances %>% top_n(10, sum_electron_variance) %>% select(res_name, sum_el
 ## Rozkład wartości wszystkich kolumn zaczynających się od part_01
 
 
-
 ```r
 library(ggplot2) # ponowne zaladowanie bilioteki by uwzglednila fig.width i fig.height
 part01 <- r %>% select (part_01_blob_electron_sum:part_01_shape_sqrt_E3)
