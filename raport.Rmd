@@ -15,6 +15,7 @@ library(dplyr)
 library(ggplot2)
 library(reshape2)
 library(ggExtra)
+library(corrplot)
 ```
 ```{r setup_others, echo=FALSE}
 options(knitr.table.format = 'markdown')
@@ -75,7 +76,15 @@ Krótkie podsumowanie wartości w każdej kolumnie
 kable(summary(r))
 ```
 
-TODO: Sekcje sprawdzającą korelacje między zmiennymi; sekcja ta powinna zawierać jakąś formę graficznej prezentacji korelacji;
+## Korelacje między zmiennymi
+
+Poniżej przedstawiony został wykres korelacji pomiędzy poszczególnymi zmiennymi. Liczba zmiennych została ograniczona by zachować czytelność wykresu.
+
+```{r, echo=FALSE}
+r1 <- r %>% select(Fc_mean,Fc_std,FoFc_mean,FoFc_std,Fo_mean,Fo_std,local_electrons,local_mean,local_parts,local_skewness,local_std,local_volume,modeled_mask_count,resolution,solvent_mask_count,solvent_ratio,TwoFoFc_mean,TwoFoFc_std,void_mask_count)
+corx <- cor(r1,use = "complete.obs")
+corrplot(corx, method = "color",order="AOE" )
+```
 
 
 ## Klasy
@@ -109,6 +118,10 @@ plot <- ggplot(r,aes(x=local_res_atom_non_h_electron_sum,y=local_res_atom_non_h_
 ggExtra::ggMarginal(plot, type="histogram", xparams=list(binwidth=5,fill="red"),yparams=list(binwidth=1,fill="red"))
 
 ```
+
+
+## Niezgodność liczby atomów i elektronów
+
 ```{r}
 variances <- r %>% mutate(atom_variance = abs(local_res_atom_non_h_count - dict_atom_non_h_count),
              electron_variance = abs(local_res_atom_non_h_electron_sum - dict_atom_non_h_electron_sum)) %>% 
@@ -117,7 +130,7 @@ variances <- r %>% mutate(atom_variance = abs(local_res_atom_non_h_count - dict_
 ```
 
 
-## 10 klas z największą niezgodnością liczby atomów
+### 10 klas z największą niezgodnością liczby atomów
 
 
 ```{r}
@@ -125,7 +138,7 @@ kable(variances %>% top_n(10, sum_atom_variance) %>% select(res_name, sum_atom_v
 ```
 
 
-## 10 klas z największą niezgodnością liczby elektronów
+### 10 klas z największą niezgodnością liczby elektronów
 
 
 ```{r}
