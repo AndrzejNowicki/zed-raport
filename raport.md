@@ -110,7 +110,7 @@ kable(top_classes)
 ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy") +theme_bw()
 ```
 
-![](raport_files/figure-html/unnamed-chunk-5-1.png)\
+![](raport_files/figure-html/unnamed-chunk-5-1.png)
 
 
 ## Wykresy rozkładów liczby atomów i elektronów
@@ -120,13 +120,13 @@ ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scal
 ggplot(r, aes(local_res_atom_non_h_count)) + geom_histogram() + ggtitle("Histogram liczby atomów")+theme_bw()
 ```
 
-![](raport_files/figure-html/unnamed-chunk-6-1.png)\
+![](raport_files/figure-html/unnamed-chunk-6-1.png)
 
 ```r
 ggplot(r, aes(local_res_atom_non_h_electron_sum)) + geom_histogram() + ggtitle("Histogram liczby elektronów")+theme_bw()
 ```
 
-![](raport_files/figure-html/unnamed-chunk-6-2.png)\
+![](raport_files/figure-html/unnamed-chunk-6-2.png)
 
 
 ## Próba odtworzenia wykresu 
@@ -140,7 +140,7 @@ plot <- ggplot(r,aes(x=local_res_atom_non_h_electron_sum,y=local_res_atom_non_h_
 ggExtra::ggMarginal(plot, type="histogram", xparams=list(binwidth=5,fill="red"),yparams=list(binwidth=1,fill="red"))
 ```
 
-![](raport_files/figure-html/unnamed-chunk-7-1.png)\
+![](raport_files/figure-html/unnamed-chunk-7-1.png)
 
 ```r
 variances <- r %>% mutate(atom_variance = abs(local_res_atom_non_h_count - dict_atom_non_h_count),
@@ -206,10 +206,10 @@ library(ggplot2) # ponowne zaladowanie bilioteki by uwzglednila fig.width i fig.
 part01 <- r %>% select (part_01_blob_electron_sum:part_01_shape_sqrt_E3)
 melted <- melt(part01)
 means <- aggregate(value ~  variable, melted, mean)
-ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(data = means, aes(label = round(value,3), x=1,y = value),colour="red",nudge_x=0.1) + stat_summary(fun.y=mean, colour="red", geom="point")+ facet_wrap(~variable, scales="free", ncol=5)+theme_bw()
+ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(data = means, aes(label = round(value,3), x=1,y = value),colour="red",nudge_x=0.1) + stat_summary(fun.y=mean, colour="red", geom="point")+ facet_wrap(~variable, scales="free", ncol=6)+theme_bw()+xlab("")
 ```
 
-![](raport_files/figure-html/unnamed-chunk-11-1.png)\
+![](raport_files/figure-html/unnamed-chunk-11-1.png)
 Wartości średnie zostały zaznaczone na czerwono.
 
 TODO: Sekcję sprawdzającą czy na podstawie wartości innych kolumn można przewidzieć liczbę elektronów i atomów oraz z jaką dokładnością można dokonać takiej predykcji; trafność regresji powinna zostać oszacowana na podstawie miar R^2 i RMSE;

@@ -140,7 +140,7 @@ library(ggplot2) # ponowne zaladowanie bilioteki by uwzglednila fig.width i fig.
 part01 <- r %>% select (part_01_blob_electron_sum:part_01_shape_sqrt_E3)
 melted <- melt(part01)
 means <- aggregate(value ~  variable, melted, mean)
-ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(data = means, aes(label = round(value,3), x=1,y = value),colour="red",nudge_x=0.1) + stat_summary(fun.y=mean, colour="red", geom="point")+ facet_wrap(~variable, scales="free", ncol=5)+theme_bw()
+ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(data = means, aes(label = round(value,3), x=1,y = value),colour="red",nudge_x=0.1) + stat_summary(fun.y=mean, colour="red", geom="point")+ facet_wrap(~variable, scales="free", ncol=6)+theme_bw()+xlab("")
 ```
 Wartości średnie zostały zaznaczone na czerwono.
 
