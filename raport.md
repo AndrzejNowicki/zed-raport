@@ -238,6 +238,7 @@ Miara RMSE dla modelu liniowego liczby atomów wyniosła 0.0119695, a dla regres
 
 ## Klasyfikator
 
+Do stworzenia klasyfikatora przewidującego wartość atrybutu res_name skorzystano ze zbioru danych dla klas, których liczność była większa niż 10. Ograniczono dostępne atrybuty do tych, których wartości zostały obliczone tylko na podstawie ligandu. Utworzono stratyfikowany zbiór treningowy, który stanowił 70% zbioru wejściowego. Pozostałe 30% posłużyło jako zbiór testowy.
 
 ```r
 r_filtered<- r %>% select(res_name,
@@ -263,24 +264,28 @@ ctrl <- trainControl(method="repeatedcv", classProbs=TRUE, number=5, repeats=10)
 rfGrid <- expand.grid(mtry=100)
 ```
 
+Użyto metody powtarzanej oceny krżyżowej, a model klasyfikacyjny powstał zgodnie z alogrytmem Random Forest.
+
 ```r
+set.seed(100)
 fit <- train(res_name ~ ., data=training,method="rf", metric="ROC", trControl=ctrl, tuneGrid = rfGrid, ntree=100)
 ```
 
 ```r
 rfClasses <- predict(fit, newdata=testing)
 cm <- confusionMatrix(data=rfClasses, testing$res_name)$overall
-kable(data.frame(name=names(cm),value=cm), row.names=FALSE)
 ```
 
-
+Uzyskana dokładność klasyfikatora: 0.5616. Pozostałe miary dostępne są poniżej.
 
 |name           |     value|
 |:--------------|---------:|
 |Accuracy       | 0.5616000|
-|Kappa          | 0.5263410|
+|Kappa          | 0.5261444|
 |AccuracyLower  | 0.5216854|
 |AccuracyUpper  | 0.6009301|
 |AccuracyNull   | 0.1568000|
 |AccuracyPValue | 0.0000000|
 |McnemarPValue  |       NaN|
+
+

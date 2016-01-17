@@ -173,7 +173,8 @@ Miara RMSE dla modelu liniowego liczby atomów wyniosła `r summary(atom_count_m
 
 ## Klasyfikator
 
-```{r training}
+Do stworzenia klasyfikatora przewidującego wartość atrybutu res_name skorzystano ze zbioru danych dla klas, których liczność była większa niż 10. Ograniczono dostępne atrybuty do tych, których wartości zostały obliczone tylko na podstawie ligandu. Utworzono stratyfikowany zbiór treningowy, który stanowił 70% zbioru wejściowego. Pozostałe 30% posłużyło jako zbiór testowy.
+```{r training_setup}
 r_filtered<- r %>% select(res_name,
   local_volume, local_electrons, local_mean, local_std, local_min,
   local_max, local_skewness, local_parts, solvent_mask_count,
@@ -196,11 +197,20 @@ testing  <- r_filtered[-inTraining,]
 ctrl <- trainControl(method="repeatedcv", classProbs=TRUE, number=5, repeats=10)
 rfGrid <- expand.grid(mtry=100)
 ```
-```{r}
+
+Użyto metody powtarzanej oceny krżyżowej, a model klasyfikacyjny powstał zgodnie z alogrytmem Random Forest.
+```{r training}
+set.seed(100)
 fit <- train(res_name ~ ., data=training,method="rf", metric="ROC", trControl=ctrl, tuneGrid = rfGrid, ntree=100)
 ```
-```{r}
+```{r prediction}
 rfClasses <- predict(fit, newdata=testing)
 cm <- confusionMatrix(data=rfClasses, testing$res_name)$overall
+```
+
+Uzyskana dokładność klasyfikatora: `r cm["Accuracy"]`. Pozostałe miary dostępne są poniżej.
+```{r, echo=FALSE}
 kable(data.frame(name=names(cm),value=cm), row.names=FALSE)
 ```
+
+
