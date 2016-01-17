@@ -269,17 +269,18 @@ fit <- train(res_name ~ ., data=training,method="rf", metric="ROC", trControl=ct
 
 ```r
 rfClasses <- predict(fit, newdata=testing)
-kable(confusionMatrix(data=rfClasses, testing$res_name)$overall,col.name="")
+cm <- confusionMatrix(data=rfClasses, testing$res_name)$overall
+kable(data.frame(name=names(cm),value=cm), row.names=FALSE)
 ```
 
 
 
-|               |          |
+|name           |     value|
 |:--------------|---------:|
-|Accuracy       | 0.5584000|
-|Kappa          | 0.5228031|
-|AccuracyLower  | 0.5184704|
-|AccuracyUpper  | 0.5977754|
+|Accuracy       | 0.5616000|
+|Kappa          | 0.5263410|
+|AccuracyLower  | 0.5216854|
+|AccuracyUpper  | 0.6009301|
 |AccuracyNull   | 0.1568000|
 |AccuracyPValue | 0.0000000|
 |McnemarPValue  |       NaN|

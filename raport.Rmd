@@ -201,5 +201,6 @@ fit <- train(res_name ~ ., data=training,method="rf", metric="ROC", trControl=ct
 ```
 ```{r}
 rfClasses <- predict(fit, newdata=testing)
-kable(confusionMatrix(data=rfClasses, testing$res_name)$overall,col.name="")
+cm <- confusionMatrix(data=rfClasses, testing$res_name)$overall
+kable(data.frame(name=names(cm),value=cm), row.names=FALSE)
 ```
