@@ -8,6 +8,7 @@ output:
     base64_images: yes
 ---
 Data przygotowania raportu: `r format(Sys.time(), '%d %B %Y')`
+<!--"date:" nie generuje się w .md, więc dla lepszego wyglądu w githubie data została dodana ręcznie -->
 
 ```{r setup_libs, echo=FALSE, results='hide', message=FALSE}
 library(knitr)
@@ -95,15 +96,15 @@ Określenie ile przykładów ma każda z klas (res_name);
 classes_occurences <- r %>% group_by(res_name) %>% summarise(count=n()) %>% arrange(desc(count))
 top_classes <- classes_occurences  %>% top_n(10,count)
 kable(top_classes)
-ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy") +theme_bw()
+ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity",fill="#3182bd") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy") +theme_bw()
 ```
 
 
 ## Wykresy rozkładów liczby atomów i elektronów
 
 ```{r,message=FALSE}
-ggplot(r, aes(local_res_atom_non_h_count)) + geom_histogram() + ggtitle("Histogram liczby atomów")+theme_bw()
-ggplot(r, aes(local_res_atom_non_h_electron_sum)) + geom_histogram() + ggtitle("Histogram liczby elektronów")+theme_bw()
+ggplot(r, aes(local_res_atom_non_h_count)) + geom_histogram(fill="#3182bd") + ggtitle("Histogram liczby atomów")+theme_bw()
+ggplot(r, aes(local_res_atom_non_h_electron_sum)) + geom_histogram(fill="#3182bd") + ggtitle("Histogram liczby elektronów")+theme_bw()
 ```
 
 
@@ -148,6 +149,8 @@ kable(variances %>% top_n(10, sum_electron_variance) %>% select(res_name, sum_el
 
 ## Rozkład wartości wszystkich kolumn zaczynających się od part_01
 
+Aby zwiększyć czytelność wykresów, do zaprezentowania rozkładu wartości zmiennych kolumn part_01 zastosowano wykresy typu boxplot. Wykresy pozwalają określić kwartyle wartości danej zmiennej oraz elementy odstające. Wartości średnie zostały zaznaczone na czerwono.
+
 ```{r fig.width=18, fig.height=20, dpi=144}
 library(ggplot2) # ponowne zaladowanie bilioteki by uwzglednila fig.width i fig.height
 part01 <- r %>% select (part_01_blob_electron_sum:part_01_shape_sqrt_E3)
@@ -155,9 +158,22 @@ melted <- melt(part01)
 means <- aggregate(value ~  variable, melted, mean)
 ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(data = means, aes(label = round(value,3), x=1,y = value),colour="red",nudge_x=0.1) + stat_summary(fun.y=mean, colour="red", geom="point")+ facet_wrap(~variable, scales="free", ncol=6)+theme_bw()+xlab("")
 ```
-Wartości średnie zostały zaznaczone na czerwono.
 
-TODO: Sekcję sprawdzającą czy na podstawie wartości innych kolumn można przewidzieć liczbę elektronów i atomów oraz z jaką dokładnością można dokonać takiej predykcji; trafność regresji powinna zostać oszacowana na podstawie miar R^2 i RMSE;
 
+## Przewidywanie liczby elektronów i atomów
+
+```{r}
+r_filtered <- r[sapply(r,is.numeric)]
+
+electron_count_model <- lm(local_res_atom_non_h_electron_sum ~ ., r_filtered)
+atom_count_model <- lm(local_res_atom_non_h_count ~ ., r_filtered)
+```
+### Trafność regresji liniowej
+Miara R^2 dla modelu liniowego liczby atomów wyniosła `r summary(atom_count_model)$r.squared`, a dla regresji liczby elektronów wyniosła `r summary(electron_count_model)$r.squared`.
+
+Miara RMSE dla modelu liniowego liczby atomów wyniosła `r summary(atom_count_model)$sigma`, a dla regresji liczby elektronów wyniosła `r summary(electron_count_model)$sigma`.
+
+
+## Klasyfikator
 TODO: Sekcję próbującą stworzyć klasyfikator przewidujący wartość atrybutu res_name (w tej sekcji należy wykorzystać wiedzę z pozostałych punktów oraz wykonać dodatkowe czynności, które mogą poprawić trafność klasyfikacji); klasyfikator powinien być wybrany w ramach optymalizacji parametrów na zbiorze walidującym; przewidywany błąd na danych z reszty populacji powinien zostać oszacowany na danych inne niż uczące za pomocą mechanizmu (stratyfikowanej!) oceny krzyżowej lub (stratyfikowanego!) zbioru testowego.
 

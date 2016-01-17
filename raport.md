@@ -1,6 +1,7 @@
 # ZED Raport
 Andrzej Nowicki  
-Data przygotowania raportu: 16 styczeń 2016
+Data przygotowania raportu: 17 styczeń 2016
+<!--"date:" nie generuje się w .md, więc dla lepszego wyglądu w githubie data została dodana ręcznie -->
 
 
 
@@ -112,7 +113,7 @@ kable(top_classes)
 |EDO      |   274|
 
 ```r
-ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy") +theme_bw()
+ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity",fill="#3182bd") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy") +theme_bw()
 ```
 
 ![](raport_files/figure-html/unnamed-chunk-6-1.png)\
@@ -122,13 +123,13 @@ ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity") + scal
 
 
 ```r
-ggplot(r, aes(local_res_atom_non_h_count)) + geom_histogram() + ggtitle("Histogram liczby atomów")+theme_bw()
+ggplot(r, aes(local_res_atom_non_h_count)) + geom_histogram(fill="#3182bd") + ggtitle("Histogram liczby atomów")+theme_bw()
 ```
 
 ![](raport_files/figure-html/unnamed-chunk-7-1.png)\
 
 ```r
-ggplot(r, aes(local_res_atom_non_h_electron_sum)) + geom_histogram() + ggtitle("Histogram liczby elektronów")+theme_bw()
+ggplot(r, aes(local_res_atom_non_h_electron_sum)) + geom_histogram(fill="#3182bd") + ggtitle("Histogram liczby elektronów")+theme_bw()
 ```
 
 ![](raport_files/figure-html/unnamed-chunk-7-2.png)\
@@ -209,6 +210,8 @@ kable(variances %>% top_n(10, sum_electron_variance) %>% select(res_name, sum_el
 
 ## Rozkład wartości wszystkich kolumn zaczynających się od part_01
 
+Aby zwiększyć czytelność wykresów, do zaprezentowania rozkładu wartości zmiennych kolumn part_01 zastosowano wykresy typu boxplot. Wykresy pozwalają określić kwartyle wartości danej zmiennej oraz elementy odstające. Wartości średnie zostały zaznaczone na czerwono.
+
 
 ```r
 library(ggplot2) # ponowne zaladowanie bilioteki by uwzglednila fig.width i fig.height
@@ -219,9 +222,24 @@ ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(dat
 ```
 
 ![](raport_files/figure-html/unnamed-chunk-12-1.png)\
-Wartości średnie zostały zaznaczone na czerwono.
 
-TODO: Sekcję sprawdzającą czy na podstawie wartości innych kolumn można przewidzieć liczbę elektronów i atomów oraz z jaką dokładnością można dokonać takiej predykcji; trafność regresji powinna zostać oszacowana na podstawie miar R^2 i RMSE;
 
+## Przewidywanie liczby elektronów i atomów
+
+
+```r
+r_filtered <- r[sapply(r,is.numeric)]
+#r_filtered <- r_filtered[complete.cases(r_filtered),] # pomijamy wiersze z brakującymi wartościami
+
+electron_count_model <- lm(local_res_atom_non_h_electron_sum ~ ., r_filtered)
+atom_count_model <- lm(local_res_atom_non_h_count ~ ., r_filtered)
+```
+### Trafność regresji liniowej
+Miara R^2 dla modelu liniowego liczby atomów wyniosła 0.9999997, a dla regresji liczby elektronów wyniosła 0.9999984.
+
+Miara RMSE dla modelu liniowego liczby atomów wyniosła 0.0119695, a dla regresji liczby elektronów wyniosła 0.176911.
+
+
+## Klasyfikator
 TODO: Sekcję próbującą stworzyć klasyfikator przewidujący wartość atrybutu res_name (w tej sekcji należy wykorzystać wiedzę z pozostałych punktów oraz wykonać dodatkowe czynności, które mogą poprawić trafność klasyfikacji); klasyfikator powinien być wybrany w ramach optymalizacji parametrów na zbiorze walidującym; przewidywany błąd na danych z reszty populacji powinien zostać oszacowany na danych inne niż uczące za pomocą mechanizmu (stratyfikowanej!) oceny krzyżowej lub (stratyfikowanego!) zbioru testowego.
 
