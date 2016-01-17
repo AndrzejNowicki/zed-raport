@@ -8,12 +8,6 @@ Data przygotowania raportu: 17 styczeń 2016
 
 
 
-## Podsumowanie
-
-
-Blablabla
-
-
 ## Przygotowanie środowiska
 
 
@@ -26,6 +20,9 @@ library(ggplot2)
 library(reshape2)
 library(ggExtra)
 library(corrplot)
+library(caret)
+library(doMC)
+registerDoMC(cores = 6)
 ```
 Aby zapewnić powtarzalność wyników przy kolejnych uruchomieniach raportu ustawiono stałe ziarno generatora liczb pseudolosowych:
 
@@ -83,7 +80,7 @@ kable(summary(r))
 
 Poniżej przedstawiony został wykres korelacji pomiędzy poszczególnymi zmiennymi. Liczba zmiennych została ograniczona by zachować czytelność wykresu.
 
-![](raport_files/figure-html/unnamed-chunk-5-1.png)\
+![](raport_files/figure-html/unnamed-chunk-5-1.png)
 
 
 ## Klasy
@@ -116,7 +113,7 @@ kable(top_classes)
 ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity",fill="#3182bd") + scale_x_discrete(limits = top_classes$res_name) + ggtitle("Najczęściej występujące klasy") +theme_bw()
 ```
 
-![](raport_files/figure-html/unnamed-chunk-6-1.png)\
+![](raport_files/figure-html/unnamed-chunk-6-1.png)
 
 
 ## Wykresy rozkładów liczby atomów i elektronów
@@ -126,13 +123,13 @@ ggplot(top_classes, aes(x=res_name, y=count)) + geom_bar(stat="identity",fill="#
 ggplot(r, aes(local_res_atom_non_h_count)) + geom_histogram(fill="#3182bd") + ggtitle("Histogram liczby atomów")+theme_bw()
 ```
 
-![](raport_files/figure-html/unnamed-chunk-7-1.png)\
+![](raport_files/figure-html/unnamed-chunk-7-1.png)
 
 ```r
 ggplot(r, aes(local_res_atom_non_h_electron_sum)) + geom_histogram(fill="#3182bd") + ggtitle("Histogram liczby elektronów")+theme_bw()
 ```
 
-![](raport_files/figure-html/unnamed-chunk-7-2.png)\
+![](raport_files/figure-html/unnamed-chunk-7-2.png)
 
 
 ## Próba odtworzenia wykresu 
@@ -146,7 +143,7 @@ plot <- ggplot(r,aes(x=local_res_atom_non_h_electron_sum,y=local_res_atom_non_h_
 ggExtra::ggMarginal(plot, type="histogram", xparams=list(binwidth=5,fill="red"),yparams=list(binwidth=1,fill="red"))
 ```
 
-![](raport_files/figure-html/unnamed-chunk-8-1.png)\
+![](raport_files/figure-html/unnamed-chunk-8-1.png)
 
 
 ## Niezgodność liczby atomów i elektronów
@@ -221,7 +218,7 @@ means <- aggregate(value ~  variable, melted, mean)
 ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(data = means, aes(label = round(value,3), x=1,y = value),colour="red",nudge_x=0.1) + stat_summary(fun.y=mean, colour="red", geom="point")+ facet_wrap(~variable, scales="free", ncol=6)+theme_bw()+xlab("")
 ```
 
-![](raport_files/figure-html/unnamed-chunk-12-1.png)\
+![](raport_files/figure-html/unnamed-chunk-12-1.png)
 
 
 ## Przewidywanie liczby elektronów i atomów
@@ -229,7 +226,6 @@ ggplot(melted,aes(x="",y=value,))+geom_boxplot(outlier.size=1)  + geom_label(dat
 
 ```r
 r_filtered <- r[sapply(r,is.numeric)]
-#r_filtered <- r_filtered[complete.cases(r_filtered),] # pomijamy wiersze z brakującymi wartościami
 
 electron_count_model <- lm(local_res_atom_non_h_electron_sum ~ ., r_filtered)
 atom_count_model <- lm(local_res_atom_non_h_count ~ ., r_filtered)
@@ -241,5 +237,49 @@ Miara RMSE dla modelu liniowego liczby atomów wyniosła 0.0119695, a dla regres
 
 
 ## Klasyfikator
-TODO: Sekcję próbującą stworzyć klasyfikator przewidujący wartość atrybutu res_name (w tej sekcji należy wykorzystać wiedzę z pozostałych punktów oraz wykonać dodatkowe czynności, które mogą poprawić trafność klasyfikacji); klasyfikator powinien być wybrany w ramach optymalizacji parametrów na zbiorze walidującym; przewidywany błąd na danych z reszty populacji powinien zostać oszacowany na danych inne niż uczące za pomocą mechanizmu (stratyfikowanej!) oceny krzyżowej lub (stratyfikowanego!) zbioru testowego.
 
+
+```r
+r_filtered<- r %>% select(res_name,
+  local_volume, local_electrons, local_mean, local_std, local_min,
+  local_max, local_skewness, local_parts, solvent_mask_count,
+  void_mask_count,modeled_mask_count, solvent_ratio, 
+  matches("part_.*")
+) %>% na.omit()
+classes <- r_filtered %>% group_by(res_name) %>% summarize(count=n()) %>% filter(count>10) 
+r_filtered<- r_filtered %>% filter(res_name %in% classes$res_name)
+r_filtered<- r_filtered %>% mutate(res_name=factor(paste("CL_",res_name,sep="")))
+
+inTraining <- 
+    createDataPartition(
+        y = r_filtered$res_name,
+        p = .70,
+        list = FALSE)
+
+training <- r_filtered[ inTraining,]
+testing  <- r_filtered[-inTraining,]
+
+ctrl <- trainControl(method="repeatedcv", classProbs=TRUE, number=5, repeats=10)
+rfGrid <- expand.grid(mtry=100)
+```
+
+```r
+fit <- train(res_name ~ ., data=training,method="rf", metric="ROC", trControl=ctrl, tuneGrid = rfGrid, ntree=100)
+```
+
+```r
+rfClasses <- predict(fit, newdata=testing)
+kable(confusionMatrix(data=rfClasses, testing$res_name)$overall,col.name="")
+```
+
+
+
+|               |          |
+|:--------------|---------:|
+|Accuracy       | 0.5584000|
+|Kappa          | 0.5228031|
+|AccuracyLower  | 0.5184704|
+|AccuracyUpper  | 0.5977754|
+|AccuracyNull   | 0.1568000|
+|AccuracyPValue | 0.0000000|
+|McnemarPValue  |       NaN|
